@@ -1,5 +1,6 @@
 package gameOfTurtles;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -343,4 +344,17 @@ public class GameOfTurtles {
 	public static void turnTo(Turtle a, Turtle b) {
 		a.face(b.getX(), b.getY());
 	}
+	
+	public File getFile(String path){        
+		String imgURL = getClass().getResource(path).toString();
+		if (imgURL != null) {
+			return new File(imgURL);
+		} else {
+			System.err.println("Couldn't find file: " + path);
+			return null;
+		}	
+
+	}
+		
+	
 }
