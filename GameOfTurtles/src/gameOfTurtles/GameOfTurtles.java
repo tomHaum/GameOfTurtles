@@ -22,6 +22,7 @@ public class GameOfTurtles {
 	// enemyTravelDistance: How far each enemy travels each tick
 
 	public static void main(String[] args) {
+		System.out.println("/resources/pistol_gun_shot.mp3");
 		canvas = new GameCanvas();
 		xPos = 0;
 		yPos = 0;
