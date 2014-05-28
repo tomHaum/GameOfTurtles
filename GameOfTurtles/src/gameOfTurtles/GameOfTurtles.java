@@ -4,10 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.Line;
-
 public class GameOfTurtles {
 	static List<Turtle> enemy = new ArrayList<Turtle>(); // List of enemies
 	static List<Turtle> deadEnemy = new ArrayList<Turtle>(); // List of dead enemies
@@ -19,8 +15,6 @@ public class GameOfTurtles {
 	static double xPos, yPos; // position of the player
 	static int ticks, numberOfEnemies, hp, enemyTravelDistance, maxBullets;
 	static boolean godMode = false;
-	static File gunShot, teleSound;
-	
 	// number of iterationsof the while loop,
 
 	// total number of enemies spawned
@@ -28,8 +22,6 @@ public class GameOfTurtles {
 	// enemyTravelDistance: How far each enemy travels each tick
 
 	public static void main(String[] args) {
-		gunShot = getFile("/resources/gun.wav");
-		teleSound = getFile("/resources/tele.wav");
 		canvas = new GameCanvas();
 		xPos = 0;
 		yPos = 0;
@@ -196,30 +188,27 @@ public class GameOfTurtles {
 	}
 
 	public static void shoot() {
-		if(bulletLive.size() < maxBullets ){
-			double canvasX = Turtle.canvasX(canvas.player.mouseX());
-			double canvasY = Turtle.canvasY(canvas.player.mouseY());
-			double playerX = canvas.player.getX();
-			double playerY = canvas.player.getY();
-			double deltaX = canvasX - playerX;
-			double deltaY = canvasY - playerY;
-			double direction = Math.atan2(deltaY, deltaX);
-			direction *= 57.2957795;
-			if (!bulletIdle.isEmpty()) {
-				Projectile t = bulletIdle.get(0);
-				
-				bulletIdle.remove(0);
-				t.set(playerX, playerY,direction, 10, 20);
-				bulletLive.add(t);
-			} else if (bulletLive.size() < maxBullets) {
-				Projectile t = new Projectile(playerX, playerY,direction, 10 , 5);
-				bulletLive.add(t);
-			}
-			playSound(gunShot);
+		double canvasX = Turtle.canvasX(canvas.player.mouseX());
+		double canvasY = Turtle.canvasY(canvas.player.mouseY());
+		double playerX = canvas.player.getX();
+		double playerY = canvas.player.getY();
+		double deltaX = canvasX - playerX;
+		double deltaY = canvasY - playerY;
+		double direction = Math.atan2(deltaY, deltaX);
+		direction *= 57.2957795;
+		
+		if (!bulletIdle.isEmpty()) {
+			Projectile t = bulletIdle.get(0);
+			
+			bulletIdle.remove(0);
+			t.set(playerX, playerY,direction, 10, 20);
+			bulletLive.add(t);
+		} else if (bulletLive.size() < maxBullets) {
+			Projectile t = new Projectile(playerX, playerY,direction, 10 , 5);
+			bulletLive.add(t);
 		}
 	
 	}
-	
 	public static void spawn(int count, int maxEnemies) {
 		double playerPosX = canvas.player.getX(); // player x position
 		double playerPosY = canvas.player.getY(); // player y position
@@ -278,32 +267,20 @@ public class GameOfTurtles {
 		}
 	}
 
-	/**
-	 * makes the wooshing sound if the player
-	 *  successfully teleports inside the boundries
-	 */
 	@SuppressWarnings("static-access")
 	public static void teleport() {
 		// broken method to teleport
 	
 		double canvasX = Turtle.canvasX(canvas.player.mouseX());
 		double canvasY = Turtle.canvasY(canvas.player.mouseY());
-//		System.out.println("mouseX: " + canvasX);
-//		System.out.println("mouseY: " + canvasY);
+		System.out.println("mouseX: " + canvasX);
+		System.out.println("mouseY: " + canvasY);
 		if (-500 < canvasX && canvasX < 500 && -500 < canvasY && canvasY < 450) {
 			canvas.player.setPosition(canvasX, canvasY);
-//			System.out.println("Wooosh");
-			playSound(teleSound);
+			System.out.println("Wooosh");
 		}
 	}
-	/**
-	 * Handles most of the activies that happen each "tick" or incriment of the game
-	 * every tick all the enemies move toward the player 
-	 * and the player moves in the direction he is facing
-	 * and the bullets move forward more
-	 * @param spawnDelay
-	 * @param movementDistance
-	 */
+
 	public static void tick(int spawnDelay, double movementDistance)
 	/*
 	 * spawnDelay is an argument that describes the amount of while loop
@@ -314,26 +291,23 @@ public class GameOfTurtles {
 			// spawns based on spawnDelay
 			spawn(1, 30);
 		}
-		//checks for bullets lifespan,
-		//checking to see if it should be moved to idle
-		//if they are not removed they move forward more
 		for (int i = 0; i < bulletLive.size(); i++) {
 			Projectile t = bulletLive.get(i);
 			if (t.getTicks() < 1) {
 				bulletIdle.add(t);
 				bulletLive.remove(i).kill();
-			}else{
-				t.step();
 			}
+			t.step();
 
 		}
-		//checks for collisions
+	
 		for (int i = 0; i < enemy.size(); i++) {
 			Turtle t = enemy.get(i);
-			
-			//each enemy is checked against all bullets
 			for(int j = 0; j < bulletLive.size(); j++){
-				if (checkCollision(bulletLive.get(j).getTurtle(), t,
+				if (checkCollision(bulletLive
+						.get(j)
+						.getTurtle(),
+						t,
 						20)) {
 						deadEnemy.add(enemy.get(i));
 						enemy.remove(i).hide();
@@ -343,13 +317,11 @@ public class GameOfTurtles {
 				}
 			}
 			
-			//checked against the player
+		
 			if (checkCollision(canvas.player, t, 30)) {
 				// System.out.println("removed");
-				t.hide();
-				deadEnemy.add(t);
-				enemy.remove(t);
-				
+				deadEnemy.add(enemy.get(i));
+				enemy.remove(i).hide();
 				if (!godMode) {
 					hp -= 1;
 					canvas.hitPointsTurtle.forward(100);
@@ -362,53 +334,27 @@ public class GameOfTurtles {
 			
 
 		}
-		//moves all the turtles toward the player
 		for (Turtle t : enemy) {
 			turnTo(t, canvas.player);
 			t.forward(movementDistance);
 		}
 
 	}
-	/**
-	 * takes two turtle arguments, turns the first one toward the second
-	 * @param a
-	 * @param b
-	 */
+
 	public static void turnTo(Turtle a, Turtle b) {
 		a.face(b.getX(), b.getY());
 	}
 	
-	/**
-	 * returns file objects that are stored in the class path.
-	 * AKA files that are stored inside the src folder.
-	 * ex: src/resources/gun.wav
-	 * src is omited when using this method
-	 */
-	public static File getFile(String path){        
-		File f = new File(GameOfTurtles.class.getResource(path).toString());
-		System.out.println(f.exists());
-		String s = f.getAbsolutePath().split("file")[1];
-		s = s.substring(2);
-		System.out.println(s);
-		return new File(s);
-					
-	}
-	
-	/**
-	 * plays .wav files that are stored within the program
-	 * @param f
-	 */
-	public static void playSound(File f){
-		 try
-		 {
-			 Clip sound = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
-			 System.out.println(f.exists());
-			 sound.open(AudioSystem.getAudioInputStream(f));
-			 sound.start();
-		 }catch(Exception e){
-			 e.printStackTrace();
-		 }
-	}
-	
+	public File getFile(String path){        
+		String imgURL = getClass().getResource(path).toString();
+		if (imgURL != null) {
+			return new File(imgURL);
+		} else {
+			System.err.println("Couldn't find file: " + path);
+			return null;
+		}	
 
+	}
+		
+	
 }
