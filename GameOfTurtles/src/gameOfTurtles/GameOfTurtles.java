@@ -14,7 +14,10 @@ public class GameOfTurtles {
 																
 	static List<Projectile> bulletLive = new ArrayList<Projectile>();
 	static List<Projectile> bulletIdle = new ArrayList<Projectile>();
-
+	
+	static List<SpreadShot> shotGunShot = new ArrayList<SpreadShot>();
+	static List<SpreadShot> shotGunShotIdle = new ArrayList<SpreadShot>();
+	
 	static GameCanvas canvas; // imported canvas for the player
 	static double xPos, yPos; // position of the player
 	static int ticks, numberOfEnemies, hp, energy, enemyTravelDistance, maxBullets,
@@ -112,7 +115,7 @@ public class GameOfTurtles {
 		t.onKey("moveDown", "s");
 		t.onKey("teleport", "q");
 		t.onKey("shoot", "e");
-//		t.onKey("restart","r");
+		t.onKey("shotGun","r");
 		
 	}
 
@@ -234,7 +237,33 @@ public class GameOfTurtles {
 			}
 		}
 	}
-	
+	public static void shotGun(){
+		double canvasX = Turtle.canvasX(canvas.player.mouseX());
+		double canvasY = Turtle.canvasY(canvas.player.mouseY());
+		double playerX = canvas.player.getX();
+		double playerY = canvas.player.getY();
+		double deltaX = canvasX - playerX;
+		double deltaY = canvasY - playerY;
+		double direction = Math.atan2(deltaY, deltaX);
+		direction *= 57.2957795;
+		System.out.println(direction);
+		if (!shotGunShotIdle.isEmpty()) {
+			SpreadShot t = shotGunShotIdle.get(0);
+			
+			shotGunShotIdle.remove(0);
+			t.set(playerX, playerY, direction, 10, 20, 10, 5);
+			System.out.println(direction);
+			shotGunShot.add(t);
+			currentShotDelay = shootCooldown;
+			playSound(gunShot);
+		} else if (shotGunShot.size() < maxBullets) {
+			SpreadShot p = new SpreadShot(playerX, playerY, direction, 10, 20, 10, 5);
+			shotGunShot.add(p);
+			currentShotDelay = shootCooldown;
+			playSound(gunShot);
+		}
+		
+	}
 	public static void spawn(int count, int maxEnemies) {
 		double playerPosX = canvas.player.getX(); // player x position
 		double playerPosY = canvas.player.getY(); // player y position
@@ -369,6 +398,7 @@ public class GameOfTurtles {
 			spawn(1, 30);
 		}
 		bulletMove();
+		shotGunMove();
 		checkEnemyPlayerCollision();
 		checkEnemyBulletCollision();
 		enemyMove(movementDistance);
@@ -493,6 +523,16 @@ public class GameOfTurtles {
 			if (t.getTicks() < 1) {
 				bulletIdle.add(t);
 				bulletLive.remove(i).kill();
+			}
+			t.step();
+		}
+	}
+	public static void shotGunMove(){
+		for (int i = 0; i < shotGunShot.size(); i++) {
+			SpreadShot t = shotGunShot.get(i);
+			if (t.getTicks() < 1) {
+				shotGunShotIdle.add(t);
+				shotGunShot.remove(i).kill();
 			}
 			t.step();
 		}
