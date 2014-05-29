@@ -7,20 +7,17 @@ public class SpreadShot {
 		subMunition = new Projectile[count];
 		this.ticks = tick;
 		double subD = spread / count;
-		double start = direction - ((count/ 2) * spread);
 		for(int i = 0; i < count; i ++){
-			double d = direction - start + i * subD;
+			double d = direction + (i * subD);
 			subMunition[i] = new Projectile(x,y,d,speed,tick);	
 		}
 	}
 	public void set(double x, double y, double direction, double speed, double spread, int tick, int count){
 		this.ticks = tick;
-		double subD = spread / (subMunition.length * 1.0);
-		double start = direction - ((subMunition.length/ 2.0) * spread);
-		System.out.println(direction);
-		System.out.println(start);
+		double subD = spread / (subMunition.length * 1.0);	
+	
 		for(int i = 0; i < subMunition.length; i ++){
-			double d = direction - start + (i * subD);
+			double d = (direction) + (i * subD);
 			
 			subMunition[i].set(x, y, d, speed, tick);	
 		}
