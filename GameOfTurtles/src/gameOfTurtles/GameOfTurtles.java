@@ -246,18 +246,18 @@ public class GameOfTurtles {
 		double deltaY = canvasY - playerY;
 		double direction = Math.atan2(deltaY, deltaX);
 		direction *= 57.2957795;
-		System.out.println(direction);
+
 		if (!shotGunShotIdle.isEmpty()) {
 			SpreadShot t = shotGunShotIdle.get(0);
 			
 			shotGunShotIdle.remove(0);
-			t.set(playerX, playerY, direction, 10, 20, 10, 5);
-			System.out.println(direction);
+			t.set(playerX, playerY, direction, 10, 45, 40, 20);
+			
 			shotGunShot.add(t);
 			currentShotDelay = shootCooldown;
 			playSound(gunShot);
 		} else if (shotGunShot.size() < maxBullets) {
-			SpreadShot p = new SpreadShot(playerX, playerY, direction, 10, 20, 10, 5);
+			SpreadShot p = new SpreadShot(playerX, playerY, direction, 10, 45, 40, 20);
 			shotGunShot.add(p);
 			currentShotDelay = shootCooldown;
 			playSound(gunShot);
@@ -401,6 +401,7 @@ public class GameOfTurtles {
 		shotGunMove();
 		checkEnemyPlayerCollision();
 		checkEnemyBulletCollision();
+		checkEnemyShotgunCollision();
 		enemyMove(movementDistance);
 		shotDelayTick(1);
 	}
@@ -510,6 +511,30 @@ public class GameOfTurtles {
 		}
 	}
 	
+	public static void checkEnemyShotgunCollision(){
+		for (int i = 0; i < enemy.size(); i++) {
+			Turtle t = enemy.get(i);
+			for(int j = 0; j < shotGunShot.size(); j++){
+				Projectile[] sub = shotGunShot.get(j).sub();
+				if(shotGunShot.get(j).getTicks() < 1){
+					shotGunShotIdle.add(shotGunShot.remove(j).kill());
+					continue;
+				}
+				for(int k = 0; k < sub.length; k++){	
+					Projectile curr = sub[k];
+					if (checkCollision(curr.getTurtle(),t,20)) {
+							t.hide();
+							deadEnemy.add(t);
+							enemy.remove(t);													
+							i--;
+							break;
+					}
+				}
+			}		
+		}
+	}
+	
+	
 	public static void enemyMove(double movementDistance){
 		for (Turtle t : enemy) {
 			turnTo(t, canvas.player);
@@ -573,10 +598,9 @@ public class GameOfTurtles {
 	 */
 	public static File getFile(String path){        
 		File f = new File(GameOfTurtles.class.getResource(path).toString());
-		System.out.println(f.exists());
 		String s = f.getAbsolutePath().split("file")[1];
 		s = s.substring(2);
-		System.out.println(s);
+//		System.out.println(s);
 		return new File(s);
 					
 	}
@@ -589,7 +613,6 @@ public class GameOfTurtles {
 		 try
 		 {
 			 Clip sound = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
-			 System.out.println(f.exists());
 			 sound.open(AudioSystem.getAudioInputStream(f));
 			 sound.start();
 		 }catch(Exception e){
