@@ -2,88 +2,117 @@ package gameOfTurtles;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import java.io.File;
+
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.Line;
 
-public class GameOfTurtles {
+public class GameOfTurtles{
 	static List<Turtle> enemy = new ArrayList<Turtle>(); // List of enemies
 	static List<Turtle> deadEnemy = new ArrayList<Turtle>(); // List of dead enemies
 																
 	static List<Projectile> bulletLive = new ArrayList<Projectile>();
 	static List<Projectile> bulletIdle = new ArrayList<Projectile>();
-	
+
 	static List<SpreadShot> shotGunShot = new ArrayList<SpreadShot>();
 	static List<SpreadShot> shotGunShotIdle = new ArrayList<SpreadShot>();
 	
 	static GameCanvas canvas; // imported canvas for the player
 	static double xPos, yPos; // position of the player
+	static double hasteMultiplier; //how much faster things go while under haste
 	static int ticks, numberOfEnemies, hp, energy, enemyTravelDistance, maxBullets,
-	scatterTime, energyRegenTime, maxEnergy, shootCooldown, currentShotDelay;
+	scatterTime, energyRegenTime, maxEnergy, shootCooldown, currentShotDelay, points,
+	pointsPerKill, playerMoveDistance, hasteDuration, remainingHasteDuration;
+	
 	static boolean godMode = false;
-	static File gunShot, teleSound;
+	static boolean hasteActive, haste, paused;
+	static File gunShot, teleSound, endScream, shotGunSound, splatSound;
 	// number of iterations of the while loop,
 
 	// total number of enemies spawned
 	// hp: Hitpoints
 	//energy: Player resource to use special abilities
-	// enemyTravelDistance: How far each enemy travels each tick
+	// enemyTravelDistance: How far each enemy travels each tick 
 	//scatterTime: Number of while loop iterations until next scatter
 	//energyRegenTime: While Loop Iterations it takes to regen energy
 	//maxEnergy: Maximum energy you can have
 	//shootDelay: Number of iterations before you can take another shot;
 	//a cooldown for shooting.
 	//currentShotDelay: Loop iterations until you can make the next shot.
+	
+	//hasteActive: The haste ability has been activated
+	//haste: Haste is currently in effect on the player
 
 	public static void main(String[] args) {
 		gunShot = getFile("/resources/gun.wav");
 		teleSound = getFile("/resources/tele.wav");
+		endScream = getFile("/resources/zilla4.wav");
+		shotGunSound = getFile("/resources/shotGun.wav");
+		splatSound = getFile("/resources/splat.wav");
 		canvas = new GameCanvas();
 		xPos = 0;
 		yPos = 0;
 		ticks = 0;
+		pointsPerKill = 15;
 		numberOfEnemies = 0;
 		enemyTravelDistance = 1;
 		maxBullets = 5;
 		scatterTime = 150;
 		energyRegenTime = 25;
 		maxEnergy = 10;
-		shootCooldown = 15;
+		shootCooldown = 10;
 		currentShotDelay = 0;
+		playerMoveDistance = 10;
+		paused = true;
+		
+		//for haste ability
 
+		SpreadShot p = new SpreadShot(0, 0, 0, 10, 45, 1, 20);
+		p.kill();
+		shotGunShot.add(p);
+		
 		initializePlayer(canvas.player);
 		initializeHitPointsCounter(canvas.hitPointsTurtle);
 		initializeEnergy(canvas.energyTurtle);
 		
 		while (hp > 0) {
 			//main loop for game; each iteration is one 'tick'
-			ticks += 1; // adds one tick for each iteration
-			canvas.player.forward(10);
-			xPos = canvas.player.getX();
-			yPos = canvas.player.getY();
-
-			tick(5, enemyTravelDistance);
-			
-			if (ticks % scatterTime == 0) {
-				scatter();
-				enemyTravelDistance += 1;
-			}
-			
-			if (ticks % energyRegenTime == 0){
-				gainEnergy(1);
+			if(!paused){
+				ticks += 1; // adds one tick for each iteration
+				gainPoints(1);
+				if(haste){
+					canvas.player.forward(playerMoveDistance*hasteMultiplier);
+				}
+				else{
+					canvas.player.forward(playerMoveDistance);
+				}
+				xPos = canvas.player.getX();
+				yPos = canvas.player.getY();
+	
+				tick(5, enemyTravelDistance);
+				
+				if (ticks % scatterTime == 0) {
+					scatter();
+					enemyTravelDistance += 1;
+				}
+				
+				if (ticks % energyRegenTime == 0){
+					gainEnergy(1);
+				}
+				checkBoundryConditions();
 			}
 			// tick(5,Math.ceil((double) ticks / 100)); //second parameter:
 			// Speeds up as time goes on
-			checkBoundryConditions();
 			// canvas.player.zoom(-500, -500, 500, 500);
 			// System.out.println(enemy.size());
+			//System.out.println(currentShotDelay);
 		}
+		playSound(endScream);
 		System.out.println("Thanks for playing!");
 		System.out.println("Final Score: " + ticks);
 	}	
-
+	
 	@SuppressWarnings("static-access")
 	public static void initializePlayer(Turtle t) {
 		t.up();
@@ -116,6 +145,13 @@ public class GameOfTurtles {
 		t.onKey("teleport", "q");
 		t.onKey("shoot", "e");
 		t.onKey("shotGun","r");
+		t.onKey("pause", "p");
+      //t.onKey("restart","r");
+		
+		t.onKey("hasteMax","h");
+		hasteActive = true;
+		hasteMultiplier = 10.0;
+		remainingHasteDuration = 0;
 		
 	}
 
@@ -188,8 +224,11 @@ public class GameOfTurtles {
 		enemy.clear();
 		initializeHitPointsCounter(canvas.hitPointsTurtle);
 		canvas.player.setPosition(0,0,0);
-		
 	}
+	public static void pause(){
+		paused = !paused;
+	}
+	
 	public static void scatter() {
 		//randomly scatters enemies, away from player
 		double playerPosX = canvas.player.getX(); // player x position
@@ -211,7 +250,7 @@ public class GameOfTurtles {
 
 	public static void shoot() {
 		//System.out.println("currentShotDelay: " + currentShotDelay);
-		if(currentShotDelay == 0){
+		if(currentShotDelay == 0 && !paused){
 			double canvasX = Turtle.canvasX(canvas.player.mouseX());
 			double canvasY = Turtle.canvasY(canvas.player.mouseY());
 			double playerX = canvas.player.getX();
@@ -227,43 +266,56 @@ public class GameOfTurtles {
 				bulletIdle.remove(0);
 				t.set(playerX, playerY,direction, 10, 20);
 				bulletLive.add(t);
-				currentShotDelay = shootCooldown;
+				if(haste){
+					currentShotDelay = (int) (shootCooldown/(hasteMultiplier*hasteMultiplier));
+				}
+				else{
+					currentShotDelay = shootCooldown;
+				}
 				playSound(gunShot);
 			} else if (bulletLive.size() < maxBullets) {
 				Projectile t = new Projectile(playerX, playerY,direction, 10 , 5);
 				bulletLive.add(t);
-				currentShotDelay = shootCooldown;
+				if(haste){
+					currentShotDelay = (int) (shootCooldown/hasteMultiplier);
+				}
+				else{
+					currentShotDelay = shootCooldown;
+				}
 				playSound(gunShot);
 			}
 		}
 	}
+	
 	public static void shotGun(){
-		double canvasX = Turtle.canvasX(canvas.player.mouseX());
-		double canvasY = Turtle.canvasY(canvas.player.mouseY());
-		double playerX = canvas.player.getX();
-		double playerY = canvas.player.getY();
-		double deltaX = canvasX - playerX;
-		double deltaY = canvasY - playerY;
-		double direction = Math.atan2(deltaY, deltaX);
-		direction *= 57.2957795;
-
-		if (!shotGunShotIdle.isEmpty()) {
-			SpreadShot t = shotGunShotIdle.get(0);
-			
-			shotGunShotIdle.remove(0);
-			t.set(playerX, playerY, direction, 10, 45, 40, 20);
-			
-			shotGunShot.add(t);
-			currentShotDelay = shootCooldown;
-			playSound(gunShot);
-		} else if (shotGunShot.size() < maxBullets) {
-			SpreadShot p = new SpreadShot(playerX, playerY, direction, 10, 45, 40, 20);
-			shotGunShot.add(p);
-			currentShotDelay = shootCooldown;
-			playSound(gunShot);
+		if(!paused){double canvasX = Turtle.canvasX(canvas.player.mouseX());
+			double canvasY = Turtle.canvasY(canvas.player.mouseY());
+			double playerX = canvas.player.getX();
+			double playerY = canvas.player.getY();
+			double deltaX = canvasX - playerX;
+			double deltaY = canvasY - playerY;
+			double direction = Math.atan2(deltaY, deltaX);
+			direction *= 57.2957795;
+	
+			if (!shotGunShotIdle.isEmpty()) {
+				SpreadShot t = shotGunShotIdle.get(0);
+				
+				shotGunShotIdle.remove(0);
+				t.set(playerX, playerY, direction, 10, 45, 40, 20);
+				
+				shotGunShot.add(t);
+				currentShotDelay = shootCooldown;
+				playSound(shotGunSound);
+			} else if (shotGunShot.size() < maxBullets) {
+				SpreadShot p = new SpreadShot(playerX, playerY, direction, 10, 45, 40, 20);
+				shotGunShot.add(p);
+				currentShotDelay = shootCooldown;
+				playSound(shotGunSound);
+			}
 		}
 		
 	}
+	
 	public static void spawn(int count, int maxEnemies) {
 		double playerPosX = canvas.player.getX(); // player x position
 		double playerPosY = canvas.player.getY(); // player y position
@@ -344,7 +396,7 @@ public class GameOfTurtles {
 		//Meta teleport method
 		//Energy Cost: How much energy ability costs
 		//distance: How far you can teleport
-		if(energy >= energyCost){
+		if(energy >= energyCost && !paused){
 			double canvasX = Turtle.canvasX(canvas.player.mouseX());
 			double canvasY = Turtle.canvasY(canvas.player.mouseY());
 			//System.out.println("mouseX: " + canvasX);
@@ -387,6 +439,23 @@ public class GameOfTurtles {
 		teleportMeta(2, 450);
 	}
 
+	public static void metaHaste(int energyCost, int duration){
+		if(energy >= energyCost && !paused){
+			haste = true;
+			canvas.player.fillColor("blue");
+			remainingHasteDuration = duration;
+			loseEnergy(energyCost);
+		}
+	}
+	
+	public static void haste1(){
+		metaHaste(3, 25);
+	}
+	
+	public static void hasteMax(){
+		metaHaste(1, 50);
+	}
+	
 	public static void tick(int spawnDelay, double movementDistance)
 	/*
 	 * spawnDelay is an argument that describes the amount of while loop
@@ -403,7 +472,12 @@ public class GameOfTurtles {
 		checkEnemyBulletCollision();
 		checkEnemyShotgunCollision();
 		enemyMove(movementDistance);
+		
 		shotDelayTick(1);
+		
+		if(hasteActive){
+			hasteTickDown(1);
+		}
 	}
 
 	public static void turnTo(Turtle a, Turtle b) {
@@ -503,9 +577,10 @@ public class GameOfTurtles {
 					t,20)) {
 						deadEnemy.add(enemy.get(i));
 						enemy.remove(i).hide();
+						gainPoints(pointsPerKill);
 						
 						bulletIdle.add(bulletLive.remove(j).kill());
-						System.out.println("HIT");
+						playSound(splatSound);
 				}
 			}		
 		}
@@ -513,6 +588,7 @@ public class GameOfTurtles {
 	
 	public static void checkEnemyShotgunCollision(){
 		for (int i = 0; i < enemy.size(); i++) {
+			if(i < 0)return;
 			Turtle t = enemy.get(i);
 			for(int j = 0; j < shotGunShot.size(); j++){
 				Projectile[] sub = shotGunShot.get(j).sub();
@@ -527,13 +603,13 @@ public class GameOfTurtles {
 							deadEnemy.add(t);
 							enemy.remove(t);													
 							i--;
+							playSound(splatSound);
 							break;
 					}
 				}
 			}		
 		}
 	}
-	
 	
 	public static void enemyMove(double movementDistance){
 		for (Turtle t : enemy) {
@@ -552,6 +628,7 @@ public class GameOfTurtles {
 			t.step();
 		}
 	}
+	
 	public static void shotGunMove(){
 		for (int i = 0; i < shotGunShot.size(); i++) {
 			SpreadShot t = shotGunShot.get(i);
@@ -571,6 +648,19 @@ public class GameOfTurtles {
 			if(currentShotDelay > 0){
 				currentShotDelay -= 1;
 			}
+		}
+	}
+	
+	public static void hasteTickDown(int amount){
+		//ticks down haste duration
+		for(int i = 0; i < amount; i++){
+			if(remainingHasteDuration > 0){
+				remainingHasteDuration -= 1;
+			}
+		}
+		if(remainingHasteDuration == 0){
+			haste = false;
+			canvas.player.fillColor("pink");
 		}
 	}
 	
@@ -598,9 +688,10 @@ public class GameOfTurtles {
 	 */
 	public static File getFile(String path){        
 		File f = new File(GameOfTurtles.class.getResource(path).toString());
+		System.out.println(f.exists());
 		String s = f.getAbsolutePath().split("file")[1];
 		s = s.substring(2);
-//		System.out.println(s);
+		System.out.println(s);
 		return new File(s);
 					
 	}
@@ -613,10 +704,15 @@ public class GameOfTurtles {
 		 try
 		 {
 			 Clip sound = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
+			 System.out.println(f.exists());
 			 sound.open(AudioSystem.getAudioInputStream(f));
 			 sound.start();
 		 }catch(Exception e){
 			 e.printStackTrace();
 		 }
+	}
+	
+	public static void gainPoints(int amount){
+		points += amount;
 	}
 }
