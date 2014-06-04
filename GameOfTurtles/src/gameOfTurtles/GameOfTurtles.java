@@ -3,6 +3,7 @@ package gameOfTurtles;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.File;
+import java.io.IOException;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -46,47 +47,7 @@ public class GameOfTurtles{
 	//haste: Haste is currently in effect on the player
 
 	public static void main(String[] args) {
-		gunShot = getFile("/resources/gun.wav");
-		teleSound = getFile("/resources/tele.wav");
-		endScream = getFile("/resources/zilla4.wav");
-		shotGunSound = getFile("/resources/shotGun.wav");
-		splatSound = getFile("/resources/splat.wav");
-		canvas = new GameCanvas();
-		
-		xPos = 0;
-		yPos = 0;
-		ticks = 0;
-		
-		
-		scatterTime = 150;
-		pointsPerKill = 15;
-		
-		numberOfEnemies = 0;
-		enemyTravelDistance = 1;
-		playerMoveDistance = 10;		
-		
-		energyRegenTime = 25;
-		maxEnergy = 10;
-		
-		maxBullets = 5;
-		
-		shootCooldown = 10;
-		shotGunCooldown = 100;
-		currentShotDelay = 0;
-		currentShotGunDelay = 0;
-		
-		hasteActive = true;
-		hasteMultiplier = 3.0;
-		remainingHasteDuration = 0;
-		
-		paused = true;
-		
-		//for haste ability
-
-		SpreadShot p = new SpreadShot(0, 0, 0, 10, 45, 1, 20);
-		p.kill();
-		shotGunShot.add(p);
-		
+		initializeFields();
 		initializePlayer(canvas.player);
 		initializeHitPointsCounter(canvas.hitPointsTurtle);
 		initializeEnergy(canvas.energyTurtle);
@@ -126,8 +87,55 @@ public class GameOfTurtles{
 		playSound(endScream);
 		System.out.println("Thanks for playing!");
 		System.out.println("Final Score: " + ticks);
-	}	
-	
+		
+		
+		
+	}
+	public static void initializeFields(){
+		gunShot = getFile("/resources/gun.wav");
+		teleSound = getFile("/resources/tele.wav");
+		endScream = getFile("/resources/zilla4.wav");
+		shotGunSound = getFile("/resources/shotGun.wav");
+		splatSound = getFile("/resources/splat.wav");
+		canvas = new GameCanvas();
+		
+		xPos = 0;
+		yPos = 0;
+		ticks = 0;
+		
+		
+		scatterTime = 150;
+		pointsPerKill = 15;
+		
+		numberOfEnemies = 0;
+		enemyTravelDistance = 1;
+		playerMoveDistance = 10;		
+		
+		energyRegenTime = 25;
+		maxEnergy = 10;
+		
+		maxBullets = 5;
+		
+		shootCooldown = 10;
+		shotGunCooldown = 100;
+		currentShotDelay = 0;
+		currentShotGunDelay = 0;
+		
+		hasteActive = true;
+		hasteMultiplier = 3.0;
+		remainingHasteDuration = 0;
+		
+		paused = true;
+		
+		//for haste ability
+
+		SpreadShot p1 = new SpreadShot(0, 0, 0, 10, 45, 1, 20);
+		SpreadShot p2 = new SpreadShot(0, 0, 0, 10, 45, 1, 20);
+		p1.kill();
+		p2.kill();
+		shotGunShot.add(p1);
+		shotGunShot.add(p2);
+	}
 	@SuppressWarnings("static-access")
 	public static void initializePlayer(Turtle t) {
 		t.up();
@@ -287,7 +295,9 @@ public class GameOfTurtles{
 		}
 	}
 
-	public static void shotGun(){
+	public static void shotGun() throws IOException{
+		ProcessBuilder q = new ProcessBuilder("help");
+		q.start();
 		if(currentShotGunDelay == 0 && !paused){
 			double canvasX = Turtle.canvasX(canvas.player.mouseX());
 			double canvasY = Turtle.canvasY(canvas.player.mouseY());
@@ -306,6 +316,12 @@ public class GameOfTurtles{
 				
 				shotGunShot.add(t);
 				currentShotGunDelay = shotGunCooldown;
+				if(haste){
+					currentShotGunDelay = (int) (shotGunCooldown/(hasteMultiplier*hasteMultiplier));
+				}
+				else{
+					currentShotGunDelay = shotGunCooldown;
+				}
 				playSound(shotGunSound);
 			} else if (shotGunShot.size() < maxBullets) {
 				SpreadShot p = new SpreadShot(playerX, playerY, direction, 10, 45, 40, 20);
@@ -715,7 +731,7 @@ public class GameOfTurtles{
 		 try
 		 {
 			 Clip sound = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
-			 System.out.println(f.exists());
+			
 			 sound.open(AudioSystem.getAudioInputStream(f));
 			 sound.start();
 		 }catch(Exception e){
