@@ -16,7 +16,7 @@ public class Projectile {
 		base = new Turtle();
 		base.hide();
 		base.shape("triangle");
-		base.speed(.0001);
+		base.speed(0);
 		base.fillColor(Color.BLACK);
 		base.up();
 		base.setPosition(x, y, direction);

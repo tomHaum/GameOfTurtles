@@ -10,8 +10,9 @@ public class GameCanvas {
 		char flag;
 		do{
 			System.out.println("starting a game");
-			GameOfTurtles.run(10,10);
-			System.out.println("play again?");
+			int[] b = GameOfTurtles.run(10,10);
+			System.out.println("You earned " + b[0] + " lives and " + b[1] + " keys.");
+			System.out.println("Do you want to play again?");
 			flag = in.next().toLowerCase().charAt(0);
 		}while(flag != 'n');
 	}

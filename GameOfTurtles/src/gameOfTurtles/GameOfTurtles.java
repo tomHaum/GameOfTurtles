@@ -2,6 +2,7 @@ package gameOfTurtles;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.io.File;
 import java.io.IOException;
 
@@ -51,20 +52,23 @@ public class GameOfTurtles{
 	//hasteActive: The haste ability has been activated
 	//haste: Haste is currently in effect on the player
 
-	public static void run(int lives, int keys){
+	public static int[] run(int lives, int keys){
 		
 		initializeFields();
 		if(firstPlay){
 			initializePlayer(canvas.player);
-			System.out.println("init player");
+//			System.out.println("init player");
 		}else{
 			clearScreen();
 		}
 		initializeHitPointsCounter(canvas.hitPointsTurtle);
 		initializeEnergy(canvas.energyTurtle);
+		if(firstPlay){
+			instructions();
+		}
 		firstPlay = false;
 		canvas.player.home(); 
-		while (hp > 0 && !gameOver && !quit) {
+		while (hp > 0 && !gameOver) {
 			//main loop for game; each iteration is one 'tick'
 			System.out.print("");
 //			try {
@@ -87,11 +91,15 @@ public class GameOfTurtles{
 				xPos = canvas.player.getX();
 				yPos = canvas.player.getY();
 	
-				tick(5, enemyTravelDistance);
+				tick(15, enemyTravelDistance);
 				
 				if (ticks % scatterTime == 0) {
 					scatter();
 					enemyTravelDistance += 1;
+					if(quit){
+						System.out.println("You quit the game");
+						break;
+					}
 				}
 				
 				if (ticks % energyRegenTime == 0){
@@ -105,20 +113,31 @@ public class GameOfTurtles{
 			// System.out.println(enemy.size());
 			//System.out.println(currentShotDelay);
 		}
+		
+		System.out.print("Final Score: " + points);
+		System.out.println(" in "  + ticks / 20  + " seconds");
+		
+		//if the player ened the game by dying
 		if(hp == 0){
 			gameOver = true;
 			playSound(endScream);
 			System.out.println("Thanks for playing!");
-			System.out.println("Final Score: " + ticks);
-		}else{
-			System.out.println("You quit the game");
+			
+			
+			int[] a = {0,0};
+			return a;
+		}
+		//if the player quit out of the game
+		else{
+	
+			
 			clearScreen();
 			toggleMusic(false);
+			int[] a = {points / 1000 ,ticks/20/30};
+			
+			return a;
 		}
-		
-		
-		
-		
+	
 	}
 	public static void initializeFields(){
 		
@@ -140,7 +159,7 @@ public class GameOfTurtles{
 				e.printStackTrace();
 			}
 			
-			System.out.println("init canvas");
+//			System.out.println("init canvas");
 			
 			SpreadShot p1 = new SpreadShot(0, 0, 0, 10, 45, 1, 20);
 			SpreadShot p2 = new SpreadShot(0, 0, 0, 10, 45, 1, 20);
@@ -151,6 +170,8 @@ public class GameOfTurtles{
 			shotGunShot.add(p1);
 			shotGunShot.add(p2);
 			shotGunShot.add(p3);
+			
+			numberOfEnemies = 0;
 		}
 		xPos = 0;
 		yPos = 0;
@@ -160,7 +181,7 @@ public class GameOfTurtles{
 		scatterTime = 150;
 		pointsPerKill = 15;
 		
-		numberOfEnemies = 0;
+		
 		enemyTravelDistance = 1;
 		playerMoveDistance = 10;		
 		
@@ -218,9 +239,9 @@ public class GameOfTurtles{
 		t.onKey("teleport", "q");
 		t.onKey("shoot", "e");
 		t.onKey("shotGun","r");
-		
+		t.onKey("pause", "p");
 		t.onKey("pause", "space");
-      	t.onKey("hasteMax","f");
+      	t.onKey("hasteMin","f");
       	t.onKey("quit","l");
       	
 		
@@ -291,7 +312,7 @@ public class GameOfTurtles{
 			//System.out.println("mouseY: " + canvasY);
 			if (-500 < canvasX && canvasX < 500 && -500 < canvasY && canvasY < 450) {
 				canvas.player.setPosition(canvasX, canvasY);
-				System.out.println("Wooosh");
+//				System.out.println("Wooosh");
 				playSound(teleSound);
 				loseEnergy(3);
 			}
@@ -308,7 +329,7 @@ public class GameOfTurtles{
 
 	public static void shoot() {
 		//System.out.println("currentShotDelay: " + currentShotDelay);
-		System.out.println("shoot");
+//		System.out.println("shoot");
 		if(currentShotDelay == 0 && !paused && !gameOver){
 			double canvasX = Turtle.canvasX(canvas.player.mouseX());
 			double canvasY = Turtle.canvasY(canvas.player.mouseY());
@@ -346,8 +367,8 @@ public class GameOfTurtles{
 		}
 	}
 
-	public static void shotGun() throws IOException{
-		System.out.println("shotgun");
+	public static void shotGun(){
+//		System.out.println("shotgun");
 		if(currentShotGunDelay == 0 && !paused && !gameOver){
 			double canvasX = Turtle.canvasX(canvas.player.mouseX());
 			double canvasY = Turtle.canvasY(canvas.player.mouseY());
@@ -384,9 +405,11 @@ public class GameOfTurtles{
 	}
 
 
-
+	/**
+	 * toggles whether the game is paused or not
+	 */
 	public static void pause(){
-		System.out.println("pausing");
+//		System.out.println("pausing");
 		pause(!paused);
 		
 	}
@@ -394,9 +417,15 @@ public class GameOfTurtles{
 		paused = freeze;
 		toggleMusic(!paused);
 	}
+	
+	/**
+	 * allows the player to exit the game on the next scatter
+	 */
 	public static void quit(){
-		paused = true;
 		quit = true;
+		System.out.print("survive the rest of the wave");
+		pause(true);
+		System.out.println(", unpause to continue the wave");
 //		clearScreen();
 //		toggleMusic(false);
 	}
@@ -468,7 +497,7 @@ public class GameOfTurtles{
 				} while (Math.abs(playerPosY - y) < 100);
 	
 				Turtle t = new Turtle(x, y);
-				t.speed(.0001);
+				t.speed(0);
 				t.up();
 				turnTo(t, canvas.player);
 	
@@ -789,10 +818,10 @@ public class GameOfTurtles{
 	 */
 	public static File getFile(String path){        
 		File f = new File(GameOfTurtles.class.getResource(path).toString());
-		System.out.println(f.exists());
+//		System.out.println(f.exists());
 		String s = f.getAbsolutePath().split("file")[1];
 		s = s.substring(2);
-		System.out.println(s);
+//		System.out.println(s);
 		return new File(s);
 					
 	}
@@ -850,6 +879,27 @@ public class GameOfTurtles{
 	
 	public static void turnTo(Turtle a, Turtle b) {
 		a.face(b.getX(), b.getY());
+	}
+	
+	public static void instructions(){
+		Scanner in = new Scanner(System.in);
+		
+		System.out.println("Welcome to the Turtle room!");
+		System.out.println("Killing enemies increases your points, as does surviving");
+		System.out.println("Surviving longer gains you keys, and points earn you lives");
+		System.out.println("W: Move up");
+		System.out.println("A: Move left");
+		System.out.println("S: Move down");
+		System.out.println("D: Move right");
+		in.next();
+		System.out.println("E: Shoot bullet in direction of mouse");
+		System.out.println("R: Shoot a wave of bullets in direction of mouse");
+		System.out.println("Q: Teleport to mouse(Costs Energy)");
+		System.out.println("F: Increase movement/shoot speed(Costs Energy)");
+		System.out.println("Spacebar or P: Pauses the game");
+		System.out.println("L: Quit the game the next time at the end of a wave");
+		System.out.println("Unpause the game when ready!");
+		
 	}
 	
 
