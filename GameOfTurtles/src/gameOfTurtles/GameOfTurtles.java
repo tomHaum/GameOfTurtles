@@ -3,8 +3,10 @@ package gameOfTurtles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -326,7 +328,11 @@ public class GameOfTurtles{
 	public static void hasteMax(){
 		metaHaste(1, 50);
 	}
-
+	/**
+	 * handles the spawning of regular gun fire as long
+	 * as the cooldown is up
+	 * uses the same re-use of turtles to keep mememory usage down as shotgun
+	 */
 	public static void shoot() {
 		//System.out.println("currentShotDelay: " + currentShotDelay);
 //		System.out.println("shoot");
@@ -366,7 +372,11 @@ public class GameOfTurtles{
 			}
 		}
 	}
-
+	/**
+	 * launches a single wave of the shotgun as long 
+	 * as the cooldown is up uses the same re-use of turlts
+	 * to keep memory usage down as shoot
+	 */
 	public static void shotGun(){
 //		System.out.println("shotgun");
 		if(currentShotGunDelay == 0 && !paused && !gameOver){
@@ -413,6 +423,10 @@ public class GameOfTurtles{
 		pause(!paused);
 		
 	}
+	/**
+	 * freezes the board in place
+	 * @param freeze whether or not to freeze the board or allow it to play
+	 */
 	public static void pause(boolean freeze){
 		paused = freeze;
 		toggleMusic(!paused);
@@ -429,6 +443,9 @@ public class GameOfTurtles{
 //		clearScreen();
 //		toggleMusic(false);
 	}
+	/**
+	 * scatters all the enemies across the board to the game is harder
+	 */
 	public static void scatter() {
 		//randomly scatters enemies, away from player
 		double playerPosX = canvas.player.getX(); // player x position
@@ -447,7 +464,11 @@ public class GameOfTurtles{
 			t.setPosition(x, y);
 		}
 	}
-
+	/**
+	 * haddles most of the checks and movement of the enemies bullets
+	 * @param spawnDelay how frequently the game spawns more enemies
+	 * @param movementDistance how far to move the enemy each tick
+	 */
 	public static void tick(int spawnDelay, double movementDistance)
 	/*
 	 * spawnDelay is an argument that describes the amount of while loop
@@ -471,7 +492,11 @@ public class GameOfTurtles{
 			hasteTickDown(1);
 		}
 	}
-	
+	/**
+	 * handles the spawning of additional turtle enemies.  
+	 * @param how many more to add
+	 * @param maxEnemies the max amount of eneies to have on the board
+	 */
 	public static void spawn(int count, int maxEnemies) {
 		double playerPosX = canvas.player.getX(); // player x position
 		double playerPosY = canvas.player.getY(); // player y position
@@ -529,7 +554,12 @@ public class GameOfTurtles{
 			}
 		}
 	}
-	
+	/**
+	 * the main way to activate teleport, which moves the player 
+	 * a maximum distance across the board
+	 * @param energyCost  the amount of energy it takes to cast
+	 * @param distance the maximum distance the player can move with teleport
+	 */
 	public static void teleportMeta(int energyCost, double distance) {
 		//Meta teleport method
 		//Energy Cost: How much energy ability costs
@@ -576,7 +606,14 @@ public class GameOfTurtles{
 		//Distance: 450 units
 		teleportMeta(2, 450);
 	}
-
+	/**
+	 * the main way to activate haste, a power up that increases player speed 
+	 * while also reducing the cooldown of the guns 
+	 * and turning the player blue for the duration
+	 * 
+	 * @param energyCost how much energy to take away
+	 * @param duration how many ticks haste lasts for
+	 */
 	public static void metaHaste(int energyCost, int duration){
 		if(energy >= energyCost && !paused && !gameOver){
 			haste = true;
@@ -586,7 +623,10 @@ public class GameOfTurtles{
 		}
 	}
 	
-		
+	/**
+	 * updates the energy bar at the bottom along with the data
+	 * @param amount the amount of energy gained
+	 */
 	public static void gainEnergy(int amount){
 		//gain [amount] energy
 		for(int i = 0; i < amount; i++){
@@ -596,7 +636,10 @@ public class GameOfTurtles{
 			}
 		}
 	}
-	
+	/**
+	 * updates the energy bar at the bottom along with the data
+	 * @param amount the amount of energy lost
+	 */
 	public static void loseEnergy(int amount){
 		//lose [amount] energy
 		for(int i = 0; i < amount; i++){
@@ -606,7 +649,10 @@ public class GameOfTurtles{
 			}
 		}
 	}
-	
+	/**
+	 * updates the health bar and the data for health
+	 * @param amount the amount of health gained
+	 */
 	public static void gainHealth(int amount){
 		//gain [amount] health
 		for(int i = 0; i < amount; i++){
@@ -616,7 +662,10 @@ public class GameOfTurtles{
 			}
 		}
 	}
-	
+	/**
+	 * updates the health bar at the top and the data for health
+	 * @param amount the amount of health lost
+	 */
 	public static void loseHealth(int amount){
 		//lose [amount] health
 		for(int i = 0; i < amount; i++)
@@ -625,15 +674,27 @@ public class GameOfTurtles{
 				canvas.hitPointsTurtle.forward(100);
 			}		
 	}
-	
+	/**
+	 * adds points to the running total of points
+	 * @param amount how many points to add
+	 */
 	public static void gainPoints(int amount){
 		points += amount;
 	}
-	
+	/**
+	 * a helper method that checks to see if two turrets hit eachother
+	 * @param a one of the turtle
+	 * @param b a different turtle
+	 * @param radius how far apart they are to say they are touching
+	 * @return did they hit or not
+	 */
 	public static boolean checkCollision(Turtle a, Turtle b, double radius) {
 		return radius > b.distance(a.getX(), a.getY());
 	}
-
+	/**
+	 * makes sure that the player is within the set boundries
+	 * move the player back if it is outside the bounds
+	 */
 	public static void checkBoundryConditions() {
 		// method that makes sure turtle does not go out of bounds
 		double x = canvas.player.getX();
@@ -655,7 +716,11 @@ public class GameOfTurtles{
 			canvas.player.setPosition(x, -480);
 		}
 	}
-	
+	/**
+	 * checks if any of the enemies make contack with the player
+	 * plays the hurt sound effect and removes the enemy from the board.
+	 * also makes the player lose health
+	 */
 	public static void checkEnemyPlayerCollision(){
 		//checks for collisions between player and any enemy
 		//used on each tick 
@@ -674,7 +739,10 @@ public class GameOfTurtles{
 			}		
 		}
 	}
-	
+	/**
+	 * checks to see if any of the regular gun bullets hits an enemy
+	 * Removes both the bullet and the enemy on collision and gives the player points
+	 */
 	public static void checkEnemyBulletCollision(){
 		//checks for collisions between enemies and bullets
 		//used each loop iteration
@@ -693,7 +761,12 @@ public class GameOfTurtles{
 			}		
 		}
 	}
-	
+	/**
+	 * checks to see if any of the shot gun bullets hit an enemy
+	 * if one does hit an enemy it plays the sound and kill the enemy
+	 * leavine the bullet still on the board.
+	 * player also gains points per kill
+	 */
 	public static void checkEnemyShotgunCollision(){
 		for (int i = 0; i < enemy.size(); i++) {
 			if(i < 0)return;
@@ -718,14 +791,19 @@ public class GameOfTurtles{
 			}		
 		}
 	}
-	
+	/**
+	 * moves all the enemies
+	 * @param movementDistance the amount to move the enemies
+	 */
 	public static void enemyMove(double movementDistance){
 		for (Turtle t : enemy) {
 			turnTo(t, canvas.player);
 			t.forward(movementDistance);
 		}
 	}
-	
+	/**
+	 * moves all the gun bullets
+	 */
 	public static void bulletMove(){
 		for (int i = 0; i < bulletLive.size(); i++) {
 			Projectile t = bulletLive.get(i);
@@ -736,7 +814,9 @@ public class GameOfTurtles{
 			t.step();
 		}
 	}
-	
+	/**
+	 * moves all the shotgun bullets
+	 */
 	public static void shotGunMove(){
 		for (int i = 0; i < shotGunShot.size(); i++) {
 			SpreadShot t = shotGunShot.get(i);
@@ -747,7 +827,10 @@ public class GameOfTurtles{
 			t.step();
 		}
 	}
-	
+	/**
+	 * Reduces the cooldown for the gun
+	 * @param amount number of ticks to reduce by
+	 */
 	public static void shotDelayTick(int amount){
 		//counts down the current active cooldown for shots
 		//by "amount" ticks
@@ -760,7 +843,10 @@ public class GameOfTurtles{
 			}
 		}
 	}
-	
+	/**
+	 * Reduces the cooldown for the shotgun
+	 * @param amount number of ticks to reduce by
+	 */
 	public static void shotGunDelayTick(int amount){
 		//counts down the current active cooldown for shots
 		//by "amount" ticks
@@ -773,7 +859,11 @@ public class GameOfTurtles{
 			}
 		}
 	}
-	
+	/**
+	 * Shortens the duration of the haste effect and stops the effect
+	 * when it hits zero
+	 * @param amount number of ticks to reduce haste by
+	 */
 	public static void hasteTickDown(int amount){
 		//ticks down haste duration
 		for(int i = 0; i < amount; i++){
@@ -786,7 +876,9 @@ public class GameOfTurtles{
 			canvas.player.fillColor("pink");
 		}
 	}
-	//moves all bullets and enemies to their idle list
+	/**
+	 * moves all the bullets and enemies to their idle collection
+	 */
 	public static void clearScreen(){
 		int s = enemy.size();
 		for(int i = s -1; i > -1; i--){
@@ -814,7 +906,7 @@ public class GameOfTurtles{
 	 * returns file objects that are stored in the class path.
 	 * AKA files that are stored inside the src folder.
 	 * ex: src/resources/gun.wav
-	 * src is omited when using this method
+	 * the files are actually found in the bin but need to be in the src first then compiled to the bin
 	 */
 	public static File getFile(String path){        
 		File f = new File(GameOfTurtles.class.getResource(path).toString());
@@ -841,10 +933,21 @@ public class GameOfTurtles{
 			 e.printStackTrace();
 		 }
 	}
+	/**
+	 * loops one clip continually 
+	 * @param File f: the file that corresponds to the .wav that should be looped
+	 * @throws LineUnavailableException
+	 * @throws IOException
+	 * @throws UnsupportedAudioFileException
+	 */
 	public static void loadBackgroundMusic(File f) throws LineUnavailableException, IOException, UnsupportedAudioFileException{
 		backgroundMusic = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
 		backgroundMusic.open(AudioSystem.getAudioInputStream(metalLoop));
 	}
+	/**
+	 * turns the background music on or off
+	 * @param on
+	 */
 	public static void toggleMusic(boolean on) {
 		if(!on){
 			
@@ -860,7 +963,10 @@ public class GameOfTurtles{
 		System.out.println("X: " + xPos);
 		System.out.println("Y: " + yPos);
 	}
-
+/**
+ * 
+ * @return the distance between the player and the mouse
+ */
 	public static double distancePlayerMouse(){
 		//returns distance between player turtle and the mouse
 		double canvasX = Turtle.canvasX(canvas.player.mouseX());
@@ -876,13 +982,16 @@ public class GameOfTurtles{
 		double distance = Math.pow(deltaXSquared + deltaYSquared, .5);
 		return distance;
 	}
-	
+	/**
+	 * turns a to b
+	 * @param a
+	 * @param b
+	 */
 	public static void turnTo(Turtle a, Turtle b) {
 		a.face(b.getX(), b.getY());
 	}
 	
 	public static void instructions(){
-		Scanner in = new Scanner(System.in);
 		
 		System.out.println("Welcome to the Turtle room!");
 		System.out.println("Killing enemies increases your points, as does surviving");
@@ -891,7 +1000,14 @@ public class GameOfTurtles{
 		System.out.println("A: Move left");
 		System.out.println("S: Move down");
 		System.out.println("D: Move right");
-		in.next();
+		System.out.println("...");
+		String iput = null;
+		try {
+			BufferedReader is = new BufferedReader(new InputStreamReader(System.in));
+			iput = is.readLine();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		System.out.println("E: Shoot bullet in direction of mouse");
 		System.out.println("R: Shoot a wave of bullets in direction of mouse");
 		System.out.println("Q: Teleport to mouse(Costs Energy)");
